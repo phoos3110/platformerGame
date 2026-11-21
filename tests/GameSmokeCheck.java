@@ -17,20 +17,29 @@ public class GameSmokeCheck {
         panel.setRunning(false);
         Field coinsField = MapManager.class.getDeclaredField("coins");
         coinsField.setAccessible(true);
-        for (int run = 0; run < 100; run++) {
+        for (String mapPath : new String[] {utils.LoadSave.DEFAULT_MAP, utils.LoadSave.FOREST_MAP}) {
+          panel.selectMap(mapPath);
+          int[][] expectedMap = panel.getMapManager().getMapData();
+          for (int run = 0; run < 100; run++) {
           MapManager.gameWon = true;
           panel.keyPressed(new KeyEvent(panel, KeyEvent.KEY_PRESSED, 0, 0, KeyEvent.VK_R, 'R'));
           Field data = entities.Character.class.getDeclaredField("mapData");
           data.setAccessible(true);
           if (data.get(panel.getPlayer()) != panel.getMapManager().getMapData()) throw new AssertionError("Stale player map");
+          if (!Arrays.deepEquals(expectedMap, panel.getMapManager().getMapData())) throw new AssertionError("Restart changed selected map");
+          int[][] tiles = panel.getMapManager().getMapData();
+          int spawnCol = panel.getPlayer().getX() / MapManager.tileSize;
+          int spawnRow = panel.getPlayer().getY() / MapManager.tileSize;
+          if (panel.getMapManager().isSolidTile(tiles[spawnRow][spawnCol]) || !panel.getMapManager().isSolidTile(tiles[spawnRow + 1][spawnCol])) throw new AssertionError("Unsafe spawn");
           Set<String> positions = new HashSet<>();
           for (Coin coin : (List<Coin>) coinsField.get(panel.getMapManager())) {
             if (coin.getY() < 0 || !positions.add(coin.getX() + ":" + coin.getY())) throw new AssertionError("Invalid or duplicate coin");
           }
           if (positions.size() != 10) throw new AssertionError("Expected 10 coins");
+          }
         }
         if (utils.LoadSave.getSpriteAtlas("BG.png") != utils.LoadSave.getSpriteAtlas("BG.png")) throw new AssertionError("Image cache failed");
-        System.out.println("PASS: timer lifecycle, 100 restarts, coin uniqueness, player map refresh, image cache");
+        System.out.println("PASS: both maps, 100 restarts per map, selected map preserved, safe spawn, coin uniqueness, timer lifecycle, player map refresh, image cache");
       } catch (Exception e) { throw new RuntimeException(e); }
     });
     SoundManager sound = new SoundManager();

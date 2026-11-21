@@ -17,6 +17,7 @@ public class LoadSave {
     public static final String Game_over_text = "game_over.png";
     public static final String Coin_image = "coin_image.png";
     public static final String DEFAULT_MAP = "assets/maps/map02.tmx";
+    public static final String FOREST_MAP = "assets/maps/map03.tmx";
     public static final String BACKGROUND_PATH = "assets/menu/menu_background.png";
     private static final Map<String, BufferedImage> images = new HashMap<>();
 

@@ -63,6 +63,11 @@ public class Game {
         gamePanel.requestFocusInWindow();
     }
 
+    public void startGame(String mapFilePath) {
+        gamePanel.selectMap(mapFilePath);
+        startGame();
+    }
+
     public void showMenu() {
         gamePanel.setRunning(false);
         cardLayout.show(frame.getContentPane(), MENU_CARD);

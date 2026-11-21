@@ -26,10 +26,20 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener {
 
     private Image backgroundImage;
     private Game game;
+    private JComboBox<String> mapSelector;
 
     public Menu(Game game) {
         this.game = game;
         setLayout(null);
+
+        JLabel mapLabel = new JLabel("CHON MAP / SELECT MAP", SwingConstants.CENTER);
+        mapLabel.setForeground(Color.WHITE);
+        mapLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        mapLabel.setBounds(280, 28, 240, 24);
+        add(mapLabel);
+        mapSelector = new JComboBox<>(new String[] {"Map 1 - Original", "Map 2 - Underground Maze"});
+        mapSelector.setBounds(280, 58, 240, 32);
+        add(mapSelector);
 
         loadBackground();
         loadButtonImages();
@@ -165,7 +175,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener {
         optionState = 0;
         quitState = 0;
         if (isMouseOver(BUTTON_X, START_BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, mouseX, mouseY)) {
-            game.startGame();
+            game.startGame(mapSelector.getSelectedIndex() == 1 ? LoadSave.FOREST_MAP : LoadSave.DEFAULT_MAP);
         } else if (isMouseOver(BUTTON_X, OPTION_BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, mouseX, mouseY)) {
             game.showOptions();
         } else if (isMouseOver(BUTTON_X, QUIT_BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, mouseX, mouseY)) {

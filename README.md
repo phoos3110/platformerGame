@@ -1,5 +1,25 @@
 # PlatformerGame
 
+## Map mới: Underground Maze
+
+Chạy `RunGame.bat`, chọn **Map 2 - Underground Maze** trong danh sách ở menu, rồi bấm Start.
+Map là mê cung ngầm 5 tầng với trần, tường đất, phòng nối nhau bằng hầm ngang
+và giếng đứng có bậc nhảy. Có ngõ cụt, đường vòng và các nhánh cần quay lại khám phá.
+Camera cuộn cả ngang lẫn dọc. Thu thập đủ 10 xu để thắng; phím `R` chơi lại đúng map đã chọn.
+
+File bản đồ: `assets/maps/map03.tmx` (160 × 40 ô, mỗi ô 32 px), dùng chung `mainmap.tsx`.
+Có thể mở file bằng Tiled để chỉnh sửa. Vị trí xu được tạo ngẫu nhiên mỗi lượt.
+Thuộc tính `spawnX` và `spawnY` trong map đặt ô xuất phát cho nhân vật.
+
+Kiểm tra các tầng có thể lên được bằng vật lý nhảy hiện tại và kiểm tra camera:
+
+```powershell
+javac -encoding UTF-8 -cp "bin;assets" -d bin tests/MapClimbCheck.java
+java '-Djava.awt.headless=true' -cp "bin;assets" MapClimbCheck
+```
+
+![Map 2 - Underground Maze](docs/map03-preview.png)
+
 Game đi cảnh 2D viết bằng Java Swing. Di chuyển, nhảy qua địa hình, tránh nước và thu thập toàn bộ xu để chiến thắng.
 
 ## Yêu cầu

@@ -26,6 +26,11 @@ public class MapManager {
     private int collectedCoins;
     public static boolean gameWon;
     private GamePanel gamePanel;
+    private int spawnX, spawnY;
+    private boolean cavern;
+
+    public int getSpawnX() { return spawnX; }
+    public int getSpawnY() { return spawnY; }
 
     public MapManager(String mapFilePath, GamePanel gamePanel) {
         this.gamePanel = gamePanel;
@@ -63,6 +68,16 @@ public class MapManager {
         mapWidth = Integer.parseInt(mapElement.getAttribute("width"));
         mapHeight = Integer.parseInt(mapElement.getAttribute("height"));
         tileSize = Integer.parseInt(mapElement.getAttribute("tilesize"));
+        spawnX = tileSize;
+        spawnY = 9 * tileSize;
+        cavern = false;
+        NodeList properties = mapElement.getElementsByTagName("property");
+        for (int i = 0; i < properties.getLength(); i++) {
+            Element property = (Element) properties.item(i);
+            if (property.getAttribute("name").equals("theme")) cavern = property.getAttribute("value").equals("cavern");
+            if (property.getAttribute("name").equals("spawnX")) spawnX = Integer.parseInt(property.getAttribute("value")) * tileSize;
+            if (property.getAttribute("name").equals("spawnY")) spawnY = Integer.parseInt(property.getAttribute("value")) * tileSize;
+        }
     }
 
     private void loadTileset(Element mapElement, String basePath) {
@@ -117,8 +132,13 @@ public class MapManager {
     public void draw(Graphics g, int cameraX) {
         int screenWidth = g.getClipBounds().width;
 
-        BufferedImage backgroundImg = LoadSave.getSpriteAtlas(LoadSave.Game_background);
-        g.drawImage(backgroundImg, 0, 0, mapWidth * tileSize, mapHeight * tileSize, null);
+        if (cavern) {
+            g.setColor(new Color(23, 28, 40));
+            g.fillRect(0, 0, mapWidth * tileSize, mapHeight * tileSize);
+        } else {
+            BufferedImage backgroundImg = LoadSave.getSpriteAtlas(LoadSave.Game_background);
+            g.drawImage(backgroundImg, 0, 0, mapWidth * tileSize, mapHeight * tileSize, null);
+        }
 
         for (int row = 0; row < mapHeight; row++) {
             for (int col = 0; col < mapWidth; col++) {
@@ -189,6 +209,21 @@ public class MapManager {
 
     public boolean isSolidTile(int tileId) {
         return (tileId >= 1 && tileId <= 9) || (tileId >= 11 && tileId <= 16);
+    }
+
+    /** Test the visible terrain inside a tile, using the same image offset as draw(). */
+    public boolean intersectsTile(int tileId, int left, int top, int right, int bottom) {
+        if (!isSolidTile(tileId)) return false;
+        BufferedImage image = tileImages.get(tileId);
+        if (image == null) return true;
+        int offsetX = (tileSize - image.getWidth()) / 2;
+        int offsetY = tileSize - image.getHeight();
+        for (int py = Math.max(0, top - offsetY); py <= Math.min(image.getHeight() - 1, bottom - offsetY); py++) {
+            for (int px = Math.max(0, left - offsetX); px <= Math.min(image.getWidth() - 1, right - offsetX); px++) {
+                if ((image.getRGB(px, py) >>> 24) >= 32) return true;
+            }
+        }
+        return false;
     }
 
     public int[][] getMapData() {

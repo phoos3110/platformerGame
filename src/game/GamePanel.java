@@ -13,8 +13,10 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener, Mou
     private MapManager mapManager;
     private Character player;
     private int cameraX;
+    private int cameraY;
     private Game game;
     private Timer timer;
+    private String mapFilePath;
 
     public void setRunning(boolean running) {
         if (running) timer.start();
@@ -26,16 +28,17 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener, Mou
 
     public GamePanel(String mapFilePath, Game game) {
         this.game = game;
+        this.mapFilePath = mapFilePath;
         initializeComponents(mapFilePath);
         setupGameLoop();
     }
 
     private void initializeComponents(String mapFilePath) {
         mapManager = new MapManager(mapFilePath, this);
-        player = new Character(mapManager.tileSize, 9 * mapManager.tileSize, this);
+        player = new Character(mapManager.getSpawnX(), mapManager.getSpawnY(), this);
         player.setMapData(mapManager.getMapData(), mapManager.tileSize);
 
-        setPreferredSize(new Dimension(mapManager.mapWidth * mapManager.tileSize / 2,mapManager.mapHeight * mapManager.tileSize));
+        setPreferredSize(new Dimension(800, 480));
 
         addKeyListener(this);
         setFocusable(true);
@@ -49,12 +52,26 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener, Mou
         });
     }
 
+    public void selectMap(String mapFilePath) {
+        setRunning(false);
+        mapManager.reset(mapFilePath);
+        this.mapFilePath = mapFilePath;
+        player.setMapData(mapManager.getMapData(), mapManager.tileSize);
+        player.reset();
+        cameraX = 0;
+        cameraY = 0;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         updateCamera();
-        mapManager.draw(g, cameraX);
-        player.draw(g, cameraX);
+        Graphics world = g.create();
+        world.translate(0, -cameraY);
+        mapManager.draw(world, cameraX);
+        player.draw(world, cameraX);
+        world.dispose();
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
@@ -129,6 +146,8 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener, Mou
         int screenWidth = getWidth();
         cameraX = player.getX() - screenWidth / 2;
         cameraX = Math.max(0, Math.min(cameraX,mapManager.mapWidth * mapManager.tileSize - screenWidth));
+        cameraY = Math.max(0, Math.min(player.getY() - getHeight() / 2,
+                mapManager.mapHeight * mapManager.tileSize - getHeight()));
     }
 
     public MapManager getMapManager() {
@@ -138,14 +157,14 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener, Mou
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_R && (player.isDead() || mapManager.isGameWon())) {
-            mapManager.reset(LoadSave.DEFAULT_MAP);
+            mapManager.reset(mapFilePath);
             player.setMapData(mapManager.getMapData(), mapManager.tileSize);
             player.reset();
             cameraX = 0;
             repaint();
         } 
         else if (e.getKeyCode() == KeyEvent.VK_ESCAPE && (player.isDead() || mapManager.isGameWon())) {
-            mapManager.reset(LoadSave.DEFAULT_MAP);
+            mapManager.reset(mapFilePath);
             player.setMapData(mapManager.getMapData(), mapManager.tileSize);
             player.reset();
             cameraX = 0;

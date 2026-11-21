@@ -172,71 +172,39 @@ public class Character {
     }
 
     private boolean checkGroundBelow() {
-        int leftTile = x / tileSize;
-        int rightTile = (x + CHAR_WIDTH - 1) / tileSize;
-        int bottomTile = (y + CHAR_HEIGHT + 1) / tileSize;
-
-        if (bottomTile >= mapData.length)
-            return false;
-
-        for (int tx = leftTile; tx <= rightTile; tx++) {
-            if (tx < 0 || tx >= mapData[0].length)
-                continue;
-            if (isSolidTile(mapData[bottomTile][tx]))
-                return true;
-        }
-        return false;
+        return collidesWithTerrain(x, y + 1);
     }
 
     private void updateVerticalPosition(int newY) {
-        int leftTile = x / tileSize;
-        int rightTile = (x + CHAR_WIDTH - 1) / tileSize;
-
-        if (ySpeed >= 0) { 
-            int bottomTile = (newY + CHAR_HEIGHT) / tileSize;
-            boolean willHitGround = false;
-
-            for (int tx = leftTile; tx <= rightTile; tx++) {
-                if (tx < 0 || tx >= mapData[0].length || bottomTile >= mapData.length)
-                    continue;
-                if (isSolidTile(mapData[bottomTile][tx])) {
-                    willHitGround = true;
-                    break;
-                }
-            }
-
-            if (willHitGround) {
-                y = bottomTile * tileSize - CHAR_HEIGHT;
+        int direction = Integer.compare(newY, y);
+        while (y != newY) {
+            if (collidesWithTerrain(x, y + direction)) {
                 ySpeed = 0;
-                onGround = true;
-            } else {
-                y = newY;
-                onGround = false;
+                onGround = direction > 0;
+                break;
             }
-        } else { 
-            int topTile = newY / tileSize;
-            boolean willHitCeiling = false;
+            y += direction;
+            onGround = false;
+        }
+        if (direction == 0) onGround = checkGroundBelow();
+        if (onGround) canDoubleJump = false;
+    }
 
-            for (int tx = leftTile; tx <= rightTile; tx++) {
-                if (tx < 0 || tx >= mapData[0].length || topTile < 0)
-                    continue;
-                if (isSolidTile(mapData[topTile][tx])) {
-                    willHitCeiling = true;
-                    break;
-                }
-            }
-
-            if (willHitCeiling) {
-                y = (topTile + 1) * tileSize;
-                ySpeed = 0;
-            } else {
-                y = newY;
+    private boolean collidesWithTerrain(int testX, int testY) {
+        if (mapData == null) return false;
+        int leftTile = Math.max(0, Math.floorDiv(testX, tileSize));
+        int rightTile = Math.min(mapData[0].length - 1, Math.floorDiv(testX + CHAR_WIDTH - 1, tileSize));
+        int topTile = Math.max(0, Math.floorDiv(testY, tileSize));
+        int bottomTile = Math.min(mapData.length - 1, Math.floorDiv(testY + CHAR_HEIGHT - 1, tileSize));
+        for (int row = topTile; row <= bottomTile; row++) {
+            for (int col = leftTile; col <= rightTile; col++) {
+                if (gamePanel.getMapManager().intersectsTile(mapData[row][col],
+                        Math.max(0, testX - col * tileSize), Math.max(0, testY - row * tileSize),
+                        Math.min(tileSize - 1, testX + CHAR_WIDTH - 1 - col * tileSize),
+                        Math.min(tileSize - 1, testY + CHAR_HEIGHT - 1 - row * tileSize))) return true;
             }
         }
-
-        if (onGround) {
-            canDoubleJump = false;
-        }
+        return false;
     }
 
     private void keepInBounds() {
@@ -253,29 +221,7 @@ public class Character {
     }
 
     private boolean canMoveHorizontally(int newX) {
-        if (mapData == null)
-            return true;
-
-        int leftTile = newX / tileSize;
-        int rightTile = (newX + CHAR_WIDTH - 1) / tileSize;
-        int topTile = y / tileSize;
-        int bottomTile = (y + CHAR_HEIGHT - 1) / tileSize;
-
-        for (int ty = topTile; ty <= bottomTile; ty++) {
-            if (ty < 0 || ty >= mapData.length)
-                continue;
-
-            if (xSpeed < 0 && leftTile >= 0 && leftTile < mapData[0].length) {
-                if (isSolidTile(mapData[ty][leftTile]))
-                    return false;
-            }
-
-            if (xSpeed > 0 && rightTile >= 0 && rightTile < mapData[0].length) {
-                if (isSolidTile(mapData[ty][rightTile]))
-                    return false;
-            }
-        }
-        return true;
+        return !collidesWithTerrain(newX, y);
     }
 
     public boolean isSolidTile(int tileId) {
@@ -414,8 +360,8 @@ public class Character {
     }
 
     public void reset() {
-        x = gamePanel.getMapManager().tileSize;
-        y = 9 * gamePanel.getMapManager().tileSize;
+        x = gamePanel.getMapManager().getSpawnX();
+        y = gamePanel.getMapManager().getSpawnY();
 
         xSpeed = 0;
         ySpeed = 0;
